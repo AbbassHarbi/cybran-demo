@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBRAN - Event Photo Gallery</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            padding-bottom: 60px;
+        }
+        header {
+            background: linear-gradient(90deg, #16222a, #3a6073);
+            color: white;
+            padding: 1.5em 0;
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+            text-align: center;
+        }
+        .container h2 {
+            font-size: 2em;
+            color: #00aaff;
+            margin-bottom: 20px;
+        }
+        #galleryGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #007bff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .gallery-item img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 123, 255, 0.5);
+        }
+        #refreshButton {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+        #refreshButton:hover {
+            background-color: #0056b3;
+        }
+        #loadingMessage, #noPhotosMessage {
+            font-size: 1.2em;
+            color: #bdc3c7;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CYBRAN Event Gallery</h1>
+    </header>
+
+    <div class="container">
+        <h2>Attendee Photos</h2>
+        <button id="refreshButton">Refresh Gallery</button>
+        <div id="loadingMessage">Loading photos...</div>
+        <div id="noPhotosMessage" style="display:none;">No photos have been shared yet.</div>
+        <div id="galleryGrid"></div>
+    </div>
+
+    <script>
+        const galleryGrid = document.getElementById('galleryGrid');
+        const refreshButton = document.getElementById('refreshButton');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const noPhotosMessage = document.getElementById('noPhotosMessage');
+        let autoRefreshInterval;
+
+        async function fetchAndDisplayPhotos() {
+            loadingMessage.style.display = 'block';
+            noPhotosMessage.style.display = 'none';
+            // galleryGrid.innerHTML = ''; // Clear previous photos before loading new ones
+
+            try {
+                const response = await fetch('/photos'); // Endpoint defined in server.js
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const photoFiles = await response.json();
+
+                loadingMessage.style.display = 'none';
+
+                if (photoFiles && photoFiles.length > 0) {
+                    // Simple diffing to avoid re-adding existing images
+                    const existingImageSources = Array.from(galleryGrid.querySelectorAll('img')).map(img => img.src);
+                    
+                    photoFiles.forEach(photoPath => {
+                        const fullPhotoUrl = `${window.location.origin}${photoPath}`;
+                        if (!existingImageSources.includes(fullPhotoUrl)) {
+                            const galleryItem = document.createElement('div');
+                            galleryItem.className = 'gallery-item';
+                            const img = document.createElement('img');
+                            img.src = photoPath; // Path is already correct for serving
+                            img.alt = 'Attendee Photo';
+                            galleryItem.appendChild(img);
+                            galleryGrid.appendChild(galleryItem);
+                        }
+                    });
+                } else {
+                    if (galleryGrid.children.length === 0) { // Only show if gallery is truly empty
+                        noPhotosMessage.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching photos:', error);
+                loadingMessage.textContent = 'Error loading photos. Please try again.';
+                loadingMessage.style.color = 'red';
+            }
+        }
+
+        refreshButton.addEventListener('click', fetchAndDisplayPhotos);
+
+        // Initial load
+        fetchAndDisplayPhotos();
+
+        // Auto-refresh every 10 seconds
+        autoRefreshInterval = setInterval(fetchAndDisplayPhotos, 10000);
+
+        // Optional: Clear interval if page is not visible to save resources
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearInterval(autoRefreshInterval);
+            } else {
+                fetchAndDisplayPhotos(); // Refresh immediately when tab becomes visible
+                autoRefreshInterval = setInterval(fetchAndDisplayPhotos, 10000);
+            }
+        });
+    </script>
+</body>
+</html>

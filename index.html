@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBRAN - Interactive Showcase</title>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            padding-bottom: 60px; 
+            overflow-x: hidden;
+        }
+        header {
+            background: linear-gradient(90deg, #16222a, #3a6073);
+            color: white;
+            padding: 1.5em 0;
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+        }
+        header h1.cybran-title {
+            font-size: 2.5em;
+            margin: 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: fadeIn 1s ease-out;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0.5em 0 0 0;
+            text-align: center;
+            animation: fadeIn 1.2s ease-out;
+        }
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+        nav ul li a {
+            color: #c0c0c0;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+        nav ul li a:hover {
+            color: #00aaff;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+            overflow: hidden;
+        }
+        .container h2 {
+            text-align: center;
+            font-size: 2em;
+            color: #00aaff;
+            margin-bottom: 30px;
+            animation: fadeIn 1.5s ease-out;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        .product-card {
+            background-color: #2c3e50;
+            border: 1px solid #34495e;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 1.8s ease-out forwards;
+            opacity: 0;
+        }
+        .product-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 10px 25px rgba(0, 123, 255, 0.5);
+        }
+        .product-card img {
+            max-width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            background-color: #34495e;
+            border: 2px solid #007bff;
+        }
+        .product-card h3 {
+            font-size: 1.4em;
+            margin: 15px 0 10px 0;
+            color: #00aaff;
+        }
+        .product-card p {
+            font-size: 0.95em;
+            color: #bdc3c7;
+            line-height: 1.6;
+        }
+        .price {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2ecc71;
+            margin-top: 15px;
+        }
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            text-align: center;
+            z-index: 1000;
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #status, #debug {
+            display: inline-block;
+            margin: 0 10px;
+        }
+        .product-card:nth-child(1) { animation-delay: 0.2s; }
+        .product-card:nth-child(2) { animation-delay: 0.4s; }
+        .product-card:nth-child(3) { animation-delay: 0.6s; }
+        .product-card:nth-child(4) { animation-delay: 0.8s; }
+        .product-card:nth-child(5) { animation-delay: 1.0s; }
+        .product-card:nth-child(6) { animation-delay: 1.2s; }
+
+        /* Styles for Photo Consent Modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content {
+            background-color: #2c3e50;
+            margin: 15% auto; 
+            padding: 25px;
+            border: 1px solid #007bff;
+            border-radius: 10px;
+            width: 80%; 
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            color: #e0e0e0;
+        }
+        .modal-content h3 {
+            color: #00aaff;
+            margin-top: 0;
+        }
+        .modal-content p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .modal-buttons button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .modal-buttons button:hover {
+            background-color: #0056b3;
+        }
+        .modal-buttons button.decline {
+            background-color: #6c757d;
+        }
+        .modal-buttons button.decline:hover {
+            background-color: #545b62;
+        }
+        /* Hidden video element for camera stream */
+        #cameraStream {
+            display: none; /* Or set to visible for debugging/preview */
+            width: 320px; 
+            height: 240px;
+            margin: 10px auto;
+            border: 1px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 class="cybran-title">CYBRAN</h1>
+        <nav>
+            <ul>
+                <li><a href="#">Showcase</a></li>
+                <li><a href="#">Innovations</a></li>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Connect</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>Explore Our Cutting-Edge Solutions</h2>
+        <div class="product-grid">
+            <div class="product-card">
+                <img src="https://via.placeholder.com/280x180.png?text=Synergy+Core" alt="Product 1">
+                <h3>Synergy Core A.I.</h3>
+                <p>Revolutionary adaptive AI for complex system optimization and predictive analytics. Unlock new potentials.</p>
+                <div class="price">Inquire for Demo</div>
+            </div>
+            <div class="product-card">
+                <img src="https://via.placeholder.com/280x180.png?text=Quantum+Guard" alt="Product 2">
+                <h3>Quantum Guard Security</h3>
+                <p>Next-generation cryptographic solutions powered by quantum entanglement. Unbreakable data protection.</p>
+                <div class="price">Consultation Available</div>
+            </div>
+            <div class="product-card">
+                <img src="https://via.placeholder.com/280x180.png?text=NeuroLink+Interface" alt="Product 3">
+                <h3>NeuroLink Interface</h3>
+                <p>Seamless brain-computer interface for enhanced human augmentation and intuitive device control.</p>
+                <div class="price">Research Access</div>
+            </div>
+            <div class="product-card">
+                <img src="https://via.placeholder.com/280x180.png?text=Helios+Energy+Cell" alt="Product 4">
+                <h3>Helios Energy Cell</h3>
+                <p>Sustainable and ultra-efficient energy source. Compact, long-lasting, and eco-friendly power.</p>
+                <div class="price">Pre-order Now</div>
+            </div>
+             <div class="product-card">
+                <img src="https://via.placeholder.com/280x180.png?text=Nova+Mesh+Network" alt="Product 5">
+                <h3>Nova Mesh Network</h3>
+                <p>Decentralized, self-healing communication network ensuring resilient connectivity in any environment.</p>
+                <div class="price">Join the Beta</div>
+            </div>
+            <div class="product-card">
+                <img src="https://via.placeholder.com/280x180.png?text=BioSynth+Fabricator" alt="Product 6">
+                <h3>BioSynth Fabricator</h3>
+                <p>Advanced organic material synthesis for medical and industrial applications. Create the future.</p>
+                <div class="price">Partnership Inquiries</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Consent Modal -->
+    <div id="photoConsentModal" class="modal">
+        <div class="modal-content">
+            <h3>Share Your Photo?</h3>
+            <p>CYBRAN Interactive Experience: Would you like to share a photo for the event gallery? If you agree, we will briefly activate your camera to capture one photo, which will be displayed publicly.</p>
+            <div class="modal-buttons">
+                <button id="agreePhoto">Agree to Share Photo</button>
+                <button id="declinePhoto" class="decline">No Thanks</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden video element for camera stream -->
+    <video id="cameraStream" autoplay playsinline></video>
+    <canvas id="photoCanvas" style="display:none;"></canvas>
+
+    <div class="status-bar">
+        <span id="status">Tap screen to initialize audio & connect...</span>
+        <span id="debug"></span>
+    </div>
+
+    <script>
+        const statusElement = document.getElementById("status");
+        const debugElement = document.getElementById("debug");
+        let webSocket;
+        let audioContext;
+        let audioBuffer;
+        let currentAudioSource = null; 
+        let audioLoaded = false;
+        let audioInitialized = false;
+        const audioFile = "/audio/user_voice.mp3";
+
+        // Photo feature elements
+        const photoConsentModal = document.getElementById("photoConsentModal");
+        const agreePhotoButton = document.getElementById("agreePhoto");
+        const declinePhotoButton = document.getElementById("declinePhoto");
+        const videoElement = document.getElementById("cameraStream");
+        const canvasElement = document.getElementById("photoCanvas");
+        let cameraStream = null;
+
+        function updateStatus(message, isError = false) {
+            statusElement.textContent = message;
+            if (isError) {
+                console.error(message);
+                statusElement.style.color = "red";
+            } else {
+                console.log(message);
+                statusElement.style.color = "white";
+            }
+        }
+
+        function updateDebug(message) {
+            debugElement.textContent = message;
+            console.log(`DEBUG: ${message}`);
+        }
+
+        function initializeAudioSystem() {
+            if (audioInitialized) return;
+            updateDebug("Attempting to initialize audio system...");
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    updateDebug("AudioContext created.");
+                } catch (e) {
+                    updateStatus("Error: Web Audio API is not supported.", true);
+                    return;
+                }
+            }
+
+            if (audioContext.state === "suspended") {
+                audioContext.resume().then(() => {
+                    updateDebug("AudioContext resumed.");
+                    audioInitialized = true;
+                    preloadAudio();
+                }).catch(e => {
+                    updateStatus("Error: Could not resume AudioContext. Interaction may be needed.", true);
+                });
+            } else {
+                updateDebug("AudioContext already running.");
+                audioInitialized = true;
+                preloadAudio();
+            }
+        }
+
+        async function preloadAudio() {
+            if (!audioInitialized || audioLoaded) return;
+            updateStatus("Loading audio resource...");
+            try {
+                const response = await fetch(audioFile);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} for ${audioFile}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                audioLoaded = true;
+                updateStatus("Audio ready. Waiting for presenter...");
+                updateDebug("Audio file loaded and decoded successfully.");
+            } catch (error) {
+                updateStatus("Error loading audio file. Check console.", true);
+                updateDebug(`Error loading audio: ${error.message}`);
+                audioLoaded = false;
+            }
+        }
+
+        function playSound() {
+            if (!audioInitialized || !audioLoaded || !audioBuffer) {
+                updateStatus("Audio not ready. Please tap screen and wait for 'Audio ready' status.", true);
+                if (!audioInitialized) initializeAudioSystem(); 
+                else if (!audioLoaded) preloadAudio();
+                return;
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    updateDebug("AudioContext resumed on play.");
+                    playSoundInternal();
+                });
+            } else {
+                playSoundInternal();
+            }
+        }
+
+        function playSoundInternal() {
+            try {
+                if (currentAudioSource) {
+                    currentAudioSource.stop();
+                    currentAudioSource.disconnect();
+                    currentAudioSource = null;
+                    updateDebug("Previous audio source stopped.");
+                }
+
+                currentAudioSource = audioContext.createBufferSource();
+                currentAudioSource.buffer = audioBuffer;
+                currentAudioSource.connect(audioContext.destination);
+                currentAudioSource.start(0);
+                updateStatus("Audio playing!", false);
+                updateDebug("Playback started.");
+
+                currentAudioSource.onended = () => {
+                    updateDebug("Audio source ended.");
+                    if (audioLoaded) updateStatus("Audio ready. Waiting for presenter...");
+                    else updateStatus("Tap screen to initialize audio & connect...");
+                    currentAudioSource = null; 
+                };
+
+            } catch (e) {
+                updateStatus("Error playing sound. Check console.", true);
+                updateDebug(`Playback error: ${e.message}`);
+            }
+        }
+
+        function stopSound() {
+            if (currentAudioSource) {
+                try {
+                    currentAudioSource.stop();
+                    updateDebug("Audio stopped by remote command.");
+                } catch (e) {
+                    updateStatus("Error stopping sound remotely.", true);
+                    updateDebug(`Remote stop error: ${e.message}`);
+                }
+            }
+        }
+
+        // Photo Capture Logic
+        function showPhotoConsent() {
+            photoConsentModal.style.display = "block";
+        }
+
+        agreePhotoButton.onclick = async () => {
+            photoConsentModal.style.display = "none";
+            updateStatus("Requesting camera permission...");
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                videoElement.srcObject = cameraStream;
+                updateDebug("Camera permission granted. Stream active.");
+                // Wait for video to be ready to capture a frame
+                videoElement.onloadedmetadata = () => {
+                    captureAndSendPhoto();
+                };
+            } catch (err) {
+                updateStatus("Camera permission denied or error.", true);
+                updateDebug(`Camera access error: ${err.message}`);
+            }
+        };
+
+        declinePhotoButton.onclick = () => {
+            photoConsentModal.style.display = "none";
+            updateStatus("Photo sharing declined.");
+        };
+
+        function captureAndSendPhoto() {
+            updateStatus("Capturing photo...");
+            const context = canvasElement.getContext('2d');
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            const imageDataUrl = canvasElement.toDataURL('image/jpeg', 0.8); // Send as JPEG
+
+            if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+                webSocket.send(JSON.stringify({ type: "photo_submission", imageData: imageDataUrl }));
+                updateStatus("Photo captured and sent!");
+                updateDebug("Photo data sent to server.");
+            } else {
+                updateStatus("Error: WebSocket not connected. Cannot send photo.", true);
+            }
+
+            // Stop camera stream after capture
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+                cameraStream = null;
+                updateDebug("Camera stream stopped.");
+            }
+        }
+
+        function connectWebSocket() {
+            updateStatus("Connecting to server...");
+            const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const wsUrl = `${wsProtocol}//${window.location.host}`;
+            webSocket = new WebSocket(wsUrl);
+
+            webSocket.onopen = () => {
+                if (!audioLoaded) updateStatus("Connected. Tap screen to initialize audio.");
+                else updateStatus("Audio ready. Waiting for presenter...");
+                updateDebug("WebSocket connection opened.");
+            };
+
+            webSocket.onmessage = (event) => {
+                updateDebug(`Message from server: ${event.data}`);
+                try {
+                    const message = JSON.parse(event.data);
+                    if (message.action === "play_audio") {
+                        updateStatus("Signal received! Attempting to play audio...");
+                        playSound();
+                    } else if (message.action === "stop_audio") {
+                        updateStatus("Stop signal received! Stopping audio...");
+                        stopSound();
+                    } else if (message.action === "request_photo_consent") {
+                        updateStatus("Photo request received from presenter.");
+                        showPhotoConsent();
+                    }
+                } catch (e) {
+                    updateStatus("Error processing server message.", true);
+                    updateDebug(`Message parse error: ${e.message}`);
+                }
+            };
+
+            webSocket.onclose = () => {
+                updateStatus("Connection closed. Please refresh.", true);
+                updateDebug("WebSocket disconnected. Attempting to reconnect...");
+                setTimeout(connectWebSocket, 5000);
+            };
+
+            webSocket.onerror = (error) => {
+                updateStatus("WebSocket connection error.", true);
+                updateDebug(`WebSocket error: ${error.message || 'Unknown error'}`);
+            };
+        }
+
+        window.onload = () => {
+            if (!window.WebSocket) {
+                updateStatus("Error: WebSockets are not supported by this browser.", true);
+                return;
+            }
+            document.body.addEventListener('click', function initialGestureHandler() {
+                initializeAudioSystem();
+                // No longer removing listener here, as it might be needed for camera too
+                // document.body.removeEventListener('click', initialGestureHandler);
+                updateDebug("Initial user gesture received (click).");
+            }, { once: false }); // Changed to false to allow multiple interactions if needed
+            document.body.addEventListener('touchend', function initialGestureHandlerMobile() {
+                 initializeAudioSystem();
+                 // document.body.removeEventListener('touchend', initialGestureHandlerMobile);
+                 updateDebug("Initial user gesture (touch) received.");
+            }, { once: false }); // Changed to false
+
+            connectWebSocket();
+        };
+    </script>
+</body>
+</html>

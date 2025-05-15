@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .controls button { 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 1em; 
+            margin: 10px 5px; 
+            min-width: 200px; 
+        }
+        #triggerButton { background-color: #007bff; }
+        #triggerButton:hover { background-color: #0056b3; }
+        #stopAllButton { background-color: #e74c3c; }
+        #stopAllButton:hover { background-color: #c0392b; }
+        #requestPhotoButton { background-color: #28a745; } /* Green for photo request */
+        #requestPhotoButton:hover { background-color: #1e7e34; }
+        .controls button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .controls { text-align: center; margin: 20px 0; }
+        #status, #clientCount, #errorMessages { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        #status { background-color: #e7f3fe; border-left: 5px solid #2196F3; }
+        #clientCount { background-color: #e8f5e9; border-left: 5px solid #4CAF50; font-size: 1.2em; }
+        #errorMessages { background-color: #ffebee; border-left: 5px solid #f44336; color: #c62828; }
+        .hidden { display: none; }
+        .gallery-link { display: block; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cybersecurity Demo - Admin Panel</h1>
+        <div id="status">Connecting to server...</div>
+        <div id="clientCount">Connected Attendees: 0</div>
+        <div class="controls">
+            <button id="triggerButton" disabled>Trigger Synchronized Audio</button>
+            <button id="stopAllButton" disabled>Stop All Audio</button>
+            <button id="requestPhotoButton" disabled>Request Attendee Photos</button> <!-- New Photo Request Button -->
+        </div>
+        <div class="gallery-link">
+            <a href="/gallery" target="_blank">View Photo Gallery</a>
+        </div>
+        <div id="errorMessages" class="hidden"></div>
+    </div>
+
+    <script>
+        const statusElement = document.getElementById("status");
+        const clientCountElement = document.getElementById("clientCount");
+        const triggerButton = document.getElementById("triggerButton");
+        const stopAllButton = document.getElementById("stopAllButton");
+        const requestPhotoButton = document.getElementById("requestPhotoButton"); // Get photo button
+        const errorMessagesElement = document.getElementById("errorMessages");
+        let adminSocket;
+
+        function showError(message) {
+            errorMessagesElement.textContent = message;
+            errorMessagesElement.classList.remove("hidden");
+        }
+
+        function clearError() {
+            errorMessagesElement.textContent = "";
+            errorMessagesElement.classList.add("hidden");
+        }
+
+        function connectAdminWebSocket() {
+            const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const wsUrl = `${wsProtocol}//${window.location.host}/admin-ws`; 
+
+            adminSocket = new WebSocket(wsUrl);
+
+            adminSocket.onopen = () => {
+                statusElement.textContent = "Connected to WebSocket server as Admin.";
+                triggerButton.disabled = false;
+                stopAllButton.disabled = false;
+                requestPhotoButton.disabled = false; // Enable photo button
+                clearError();
+                adminSocket.send(JSON.stringify({ action: "get_client_count" })); 
+            };
+
+            adminSocket.onmessage = (event) => {
+                console.log("Message from server:", event.data);
+                try {
+                    const message = JSON.parse(event.data);
+                    switch (message.type) {
+                        case "admin_status":
+                        case "client_update":
+                            clientCountElement.textContent = `Connected Attendees: ${message.connectedClients}`;
+                            break;
+                        case "client_count":
+                             clientCountElement.textContent = `Connected Attendees: ${message.count}`;
+                            break;
+                        case "trigger_ack":
+                        case "stop_ack":
+                        case "photo_request_ack": // Acknowledge photo request
+                            statusElement.textContent = message.message;
+                            setTimeout(() => { statusElement.textContent = "Connected to WebSocket server as Admin."; }, 3000);
+                            break;
+                        case "error":
+                            showError(`Server Error: ${message.message}`);
+                            if (message.message === "Admin already connected") {
+                                triggerButton.disabled = true;
+                                stopAllButton.disabled = true;
+                                requestPhotoButton.disabled = true;
+                            }
+                            break;
+                        default:
+                            console.log("Received unhandled message type:", message.type);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse message from server:", e);
+                    showError("Received an unparsable message from server.");
+                }
+            };
+
+            adminSocket.onclose = () => {
+                statusElement.textContent = "Disconnected from server. Attempting to reconnect...";
+                triggerButton.disabled = true;
+                stopAllButton.disabled = true;
+                requestPhotoButton.disabled = true; // Disable photo button
+                setTimeout(connectAdminWebSocket, 5000);
+            };
+
+            adminSocket.onerror = (error) => {
+                statusElement.textContent = "WebSocket connection error. Check console.";
+                triggerButton.disabled = true;
+                stopAllButton.disabled = true;
+                requestPhotoButton.disabled = true; // Disable photo button
+                console.error("Admin WebSocket error:", error);
+                showError("WebSocket connection error. Ensure server is running.");
+            };
+        }
+
+        triggerButton.onclick = () => {
+            if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
+                statusElement.textContent = "Sending trigger command...";
+                adminSocket.send(JSON.stringify({ action: "trigger_audio" }));
+            } else {
+                showError("Not connected to server. Cannot send trigger.");
+            }
+        };
+
+        stopAllButton.onclick = () => {
+            if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
+                statusElement.textContent = "Sending stop all audio command...";
+                adminSocket.send(JSON.stringify({ action: "stop_all_audio" }));
+            } else {
+                showError("Not connected to server. Cannot send stop command.");
+            }
+        };
+
+        requestPhotoButton.onclick = () => { // Event listener for photo request button
+            if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
+                statusElement.textContent = "Sending photo consent request to attendees...";
+                adminSocket.send(JSON.stringify({ action: "request_photo_consent" }));
+            } else {
+                showError("Not connected to server. Cannot send photo request.");
+            }
+        };
+
+        window.onload = () => {
+            if (!window.WebSocket) {
+                statusElement.textContent = "Error: WebSockets are not supported by this browser.";
+                triggerButton.disabled = true;
+                stopAllButton.disabled = true;
+                requestPhotoButton.disabled = true;
+                showError("WebSockets are not supported by this browser.");
+                return;
+            }
+            connectAdminWebSocket();
+        };
+    </script>
+</body>
+</html>
+
