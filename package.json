@@ -17,6 +17,8 @@
   "bugs": {
     "url": "https://github.com/AbbassHarbi/cybran-demo/issues"
   },
-  "homepage": "https://github.com/AbbassHarbi/cybran-demo#readme"
+  "homepage": "https://github.com/AbbassHarbi/cybran-demo#readme",
+  "dependencies": {
+    "ws": "^8.18.2"
+  }
 }
-
