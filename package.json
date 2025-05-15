@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/AbbassHarbi/cybran-demo#readme",
   "dependencies": {
+    "uuid": "^11.1.0",
     "ws": "^8.18.2"
   }
 }
